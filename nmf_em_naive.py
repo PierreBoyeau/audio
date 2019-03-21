@@ -41,8 +41,8 @@ class NmfEmNaive:
         # Useful quantities
         # Shape F, I, I
 
-        self.r_xx0 = np.mean(self.x_f.reshape(self.n_freq, n_bins, n_canals, 1)
-                            * self.x_f.conj().reshape(self.n_freq, n_bins, 1, self.n_canals),
+        self.r_xx0 = np.mean(self.x_f.reshape(self.n_freq, self.n_bins, self.n_canals, 1)
+                            * self.x_f.conj().reshape(self.n_freq, self.n_bins, 1, self.n_canals),
                             axis=1)
         self.r_xx0 = 0.5 * (self.r_xx0 + self.r_xx0.transpose([0, 2, 1]))
 
@@ -261,154 +261,6 @@ class NmfEmNaive:
 
         return
 
-    # def e_step_parallel(self):
-    #     """
-    #
-    #     :return:
-    #     """
-    #     # Part 1: sigma computations
-    #     sigma_c = np.zeros((self.n_freq, self.n_bins, self.n_comps), dtype=self.dtype)
-    #     sigma_x = np.zeros((self.n_freq, self.n_bins, self.n_canals, self.n_canals),
-    #                        dtype=self.dtype)
-    #     sigma_s = np.zeros((self.n_freq, self.n_bins, self.n_sources), dtype=self.dtype)
-    #     my_sigma_b = self.get_sigma_b()
-    #
-    #     h, w = self.h, self.w
-    #
-    #     def sigma_c_compute(my_freq, my_n):
-    #         return w[my_freq, :] * h[:, my_n]
-    #
-    #     for freq in np.arange(self.n_freq):
-    #         sigma_c[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(sigma_c_compute)(freq, n)
-    #                                      for n in np.arange(self.n_bins))
-    #
-    #     for j in range(self.n_sources):
-    #         k_indices = np.where(self.k_to_j == j)[0]
-    #         sigma_s[:, :, j] = sigma_c[:, :, k_indices].sum(axis=-1)
-    #
-    #     def sigma_x_compute(my_freq, my_n):
-    #         a_f = self.a[my_freq]
-    #         return (multi_dot([a_f, np.diag(sigma_s[my_freq, my_n, :]), a_f.conj().T])
-    #                 + my_sigma_b[my_freq])
-    #
-    #     for freq in np.arange(self.n_freq):
-    #         sigma_x[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(sigma_x_compute)(freq, n)
-    #                                     for n in np.arange(self.n_bins))
-    #
-    #
-    #     # sigma_x = sigma_x.real.astype(self.dtype)
-    #     sigma_x_inv = np.linalg.inv(sigma_x)
-    #     # sigma_x_inv = sigma_x_inv.real.astype(self.dtype)
-    #
-    #     self.sigma_x = sigma_x
-    #     self.sigma_x_inv = sigma_x_inv
-    #
-    #     # G computations
-    #     g_s = np.zeros((self.n_freq, self.n_bins, self.n_sources, self.n_canals), dtype=self.dtype)
-    #     g_c = np.zeros((self.n_freq, self.n_bins, self.n_comps, self.n_canals), dtype=self.dtype)
-    #
-    #     a_round = self.get_around()
-    #
-    #     def gs_compute(my_freq, my_n):
-    #         a_f_h = self.a[my_freq, :].conj().T
-    #         sigma_s_fn_diag = np.diag(sigma_s[my_freq, my_n])
-    #         g_s_fn = multi_dot([sigma_s_fn_diag, a_f_h, sigma_x_inv[my_freq, my_n]])
-    #
-    #         assert g_s_fn.shape == (self.n_sources, self.n_canals)
-    #         return g_s_fn
-    #
-    #     def gc_compute(my_freq, my_n):
-    #         a_round_f_h = a_round[my_freq, :].conj().T
-    #         sigma_c_fn_diag = np.diag(sigma_c[my_freq, my_n])
-    #         g_c_fn = multi_dot([sigma_c_fn_diag, a_round_f_h, sigma_x_inv[my_freq, my_n]])
-    #         assert g_c_fn.shape == (self.n_comps, self.n_canals)
-    #         return g_c_fn
-    #
-    #     for freq in np.arange(self.n_freq):
-    #         g_s[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(gs_compute)(freq, n)
-    #                                 for n in np.arange(self.n_bins))
-    #         g_c[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(gc_compute)(freq, n)
-    #                                 for n in np.arange(self.n_bins))
-    #
-    #     # S and C computation
-    #     s = np.zeros((self.n_freq, self.n_bins, self.n_sources), dtype=self.dtype)
-    #     c = np.zeros((self.n_freq, self.n_bins, self.n_comps), dtype=self.dtype)
-    #
-    #     def s_compute(my_freq, my_n):
-    #         x_fn = self.x_f[my_freq, my_n]
-    #         g_s_fn = g_s[my_freq, my_n]
-    #         s_fn = g_s_fn.dot(x_fn)
-    #         assert s_fn.shape == (self.n_sources,)
-    #         return s_fn
-    #
-    #     def c_compute(my_freq, my_n):
-    #         x_fn = self.x_f[my_freq, my_n]
-    #         g_c_fn = g_c[my_freq, my_n]
-    #         c_fn = g_c_fn.dot(x_fn)
-    #         assert c_fn.shape == (self.n_comps,)
-    #         return c_fn
-    #
-    #     for freq in np.arange(self.n_freq):
-    #         s[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(s_compute)(freq, n)
-    #                               for n in np.arange(self.n_bins))
-    #         c[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(c_compute)(freq, n)
-    #                               for n in np.arange(self.n_bins))
-    #     self.s = s
-    #
-    #     # Cov computations
-    #     s_conj_tensor = s.conj().reshape((self.n_freq, self.n_bins, 1, self.n_sources))
-    #     self.r_xs = np.mean(self.x_f.reshape((self.n_freq, self.n_bins, self.n_canals, 1))
-    #                         * s_conj_tensor,
-    #                         axis=1)
-    #
-    #     ss_all = np.zeros(shape=(self.n_freq, self.n_bins, self.n_sources, self.n_sources),
-    #                       dtype=self.dtype)
-    #     uk = np.zeros(shape=(self.n_freq, self.n_bins, self.n_comps), dtype=self.dtype)
-    #
-    #     def ss_compute(my_freq, my_n):
-    #         s_fn = s[my_freq, my_n, :].reshape((-1, 1))
-    #         sigma_s_fn_diag = np.diag(sigma_s[my_freq, my_n])
-    #
-    #         last_term_ss = multi_dot([g_s[my_freq, my_n, :],
-    #                                   self.a[my_freq, :],
-    #                                   sigma_s_fn_diag])
-    #         sst = s_fn.dot(s_fn.conj().T)
-    #         assert last_term_ss.shape == (self.n_sources, self.n_sources)
-    #         assert sst.shape == (self.n_sources, self.n_sources)
-    #         return (sst + np.diag(sigma_s[my_freq, my_n, :])
-    #                                     - last_term_ss)
-    #
-    #     def u_k_compute(my_freq, my_n):
-    #         af_sigma_c_prod = a_round[my_freq, :].dot(np.diag(sigma_c[my_freq, my_n]))
-    #         last_term = (g_c[my_freq, my_n, :] * af_sigma_c_prod.T).sum(axis=-1)
-    #         return (c[my_freq, my_n, :] * c[my_freq, my_n, :].conj() + sigma_c[my_freq, my_n]
-    #                                       - last_term)
-    #
-    #     for freq in np.arange(self.n_freq):
-    #         uk[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(u_k_compute)(freq, n)
-    #                                      for n in np.arange(self.n_bins))
-    #         ss_all[freq, :] = Parallel(n_jobs=self.n_jobs)(delayed(ss_compute)(freq, n)
-    #                                      for n in np.arange(self.n_bins))
-    #
-    #     self.u_k = uk.real.astype(self.dtype)
-    #     self.r_ss = ss_all.mean(axis=1)
-    #     self.r_ss = 0.5 * (self.r_ss + self.r_ss.transpose([0, 2, 1]))
-    #
-    #     if self.test_shapes:
-    #         assert sigma_c.shape == (self.n_freq, self.n_bins, self.n_comps)
-    #         assert sigma_s.shape == (self.n_freq, self.n_bins, self.n_sources)
-    #         assert sigma_x.shape == (self.n_freq, self.n_bins, self.n_canals, self.n_canals)
-    #         assert sigma_x_inv.shape == (self.n_freq, self.n_bins, self.n_canals, self.n_canals)
-    #         assert a_round.shape == (self.n_freq, self.n_canals, self.n_comps), a_round.shape
-    #         assert g_s.shape == (self.n_freq, self.n_bins, self.n_sources, self.n_canals)
-    #         assert g_c.shape == (self.n_freq, self.n_bins, self.n_comps, self.n_canals)
-    #         assert s.shape == (self.n_freq, self.n_bins, self.n_sources)
-    #         assert c.shape == (self.n_freq, self.n_bins, self.n_comps)
-    #         assert self.r_xs.shape == (self.n_freq, self.n_canals, self.n_sources), self.r_xs.shape
-    #         assert self.r_ss.shape == (self.n_freq, self.n_sources, self.n_sources)
-    #         assert self.u_k.shape == (self.n_freq, self.n_bins, self.n_comps)
-    #
-    #     return
 
     def normalize_awh(self):
         """
@@ -526,49 +378,49 @@ def init_strategy(my_x, n_sources, n_comps):
     return a_0, w_0, h_0
 
 
-if __name__ == '__main__':
-    from audio_io import read_wav, save_signals
-    from stft_tools import stft_vanilla
-    from tqdm import tqdm
-    import matplotlib.pyplot as plt
-
-    n_components = 12
-    n_sources = 3
-
-    fs, x_t = read_wav(filename='./data/dev2/dev2_female4_inst_mix.wav')
-
-    print(x_t.shape)
-    # x_t = x_t[:40000]
-    freqs, times, x_f = stft_vanilla(x_t.T, nperseg=1024)
-    n_canals, n_freqs, n_bins = x_f.shape
-
-    # x_f = x_f.reshape((n_freqs, n_bins, n_canals))
-    x_f = x_f.transpose([1, 2, 0])
-    print(x_f.shape)
-
-    # plt.plot(x_t[:, 0])
-    # plt.show()
-
-    a0, w0, h0 = init_strategy(x_f, n_sources=n_sources, n_comps=n_components)
-
-    alg = NmfEmNaive(x_f, n_components, n_sources, test_shapes=True, test_dots=False, mode='D',
-                     a0=a0, w0=w0, h0=h0, n_jobs=1)
-    print(alg.sigma_hat_f.min(), alg.sigma_hat_f.max())
-
-    costs = []
-
-    for iterate in tqdm(range(300)):
-        alg.e_step()
-        alg.m_step()
-        my_cost = alg.cost()
-        print(my_cost)
-        costs.append(my_cost)
-
-        signals_iter = alg.s
-        if iterate % 50 == 0:
-            save_signals(signals_iter, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
-                         filename='results/D/signals_iter{}'.format(iterate))
-
-    signals = alg.s
-    save_signals(signals, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
-                 filename='results/D/signals_final')
+# if __name__ == '__main__':
+#     from audio_io import read_wav, save_signals
+#     from stft_tools import stft_vanilla
+#     from tqdm import tqdm
+#     import matplotlib.pyplot as plt
+#
+#     n_components = 12
+#     n_sources = 3
+#
+#     fs, x_t = read_wav(filename='./data/dev2/dev2_female4_inst_mix.wav')
+#
+#     print(x_t.shape)
+#     # x_t = x_t[:40000]
+#     freqs, times, x_f = stft_vanilla(x_t.T, nperseg=1024)
+#     n_canals, n_freqs, n_bins = x_f.shape
+#
+#     # x_f = x_f.reshape((n_freqs, n_bins, n_canals))
+#     x_f = x_f.transpose([1, 2, 0])
+#     print(x_f.shape)
+#
+#     # plt.plot(x_t[:, 0])
+#     # plt.show()
+#
+#     a0, w0, h0 = init_strategy(x_f, n_sources=n_sources, n_comps=n_components)
+#
+#     alg = NmfEmNaive(x_f, n_components, n_sources, test_shapes=True, test_dots=False, mode='D',
+#                      a0=a0, w0=w0, h0=h0, n_jobs=1)
+#     print(alg.sigma_hat_f.min(), alg.sigma_hat_f.max())
+#
+#     costs = []
+#
+#     for iterate in tqdm(range(300)):
+#         alg.e_step()
+#         alg.m_step()
+#         my_cost = alg.cost()
+#         print(my_cost)
+#         costs.append(my_cost)
+#
+#         signals_iter = alg.s
+#         if iterate % 50 == 0:
+#             save_signals(signals_iter, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
+#                          filename='results/D/signals_iter{}'.format(iterate))
+#
+#     signals = alg.s
+#     save_signals(signals, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
+#                  filename='results/D/signals_final')
