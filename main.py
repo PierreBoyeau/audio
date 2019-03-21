@@ -26,7 +26,7 @@ mode = args.mode
 fs, x_t = read_wav(filename=filesource)
 
 print(x_t.shape)
-x_t = x_t[:40000]
+# x_t = x_t[:40000]
 
 freqs, times, x_f = stft_vanilla(x_t.T, nperseg=1024)
 n_canals, n_freqs, n_bins = x_f.shape
@@ -60,7 +60,7 @@ for iterate in tqdm(range(300)):
         # save_signals(signals_iter, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
         #              filename=direc+'/signals_iter{}'.format(iterate))
         coefs = extract_sources_influences(signals_iter, a_iter)
-        save_signals(coefs, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
+        to_files(coefs, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
                      filename=direc+'/signals_iter{}'.format(iterate))
 
 
