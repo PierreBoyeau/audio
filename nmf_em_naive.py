@@ -33,7 +33,7 @@ class NmfEmNaive:
 
         self.n_comps = n_components
         self.n_sources = n_sources
-        assert self.n_comps % self.n_canals == 0
+        assert self.n_comps % self.n_sources == 0
         self.k_j = self.n_comps // self.n_sources
         self.k_to_j = np.repeat(np.arange(self.n_sources), self.k_j)
         assert self.k_to_j.shape == (self.n_comps,)
