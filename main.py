@@ -4,6 +4,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from nmf_em_naive import NmfEmNaive, init_strategy
 from sources_retriever import to_files, extract_sources_influences
+import numpy as np
 import argparse
 
 
@@ -66,3 +67,6 @@ for iterate in tqdm(range(300)):
 signals = alg.s
 save_signals(signals, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
              filename=direc+'/signals_final')
+
+np.save(direc+'/final_s.npz', alg.s)
+np.save(direc+'/final_a.npz', alg.a)
