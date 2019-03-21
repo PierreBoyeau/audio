@@ -12,11 +12,6 @@ def write_wav(filename, rate, data):
     wav.write(filename=filename, rate=rate, data=sig)
 
 
-def float_to_bits_1d(arr, bits=16):
-    N = len(arr)
-    res = np.empty(shape=(N,), dtype=np.uint32)
-
-
 def save_signals(signals, n_freqs, n_bins, fs, filename):
     signals = signals.transpose([2, 0, 1])
     for j, signal in enumerate(signals):

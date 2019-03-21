@@ -368,9 +368,9 @@ def init_strategy(my_x, n_sources, n_comps):
     n_freq, n_bins, n_canals = my_x.shape
     my_std = 0.5 * np.mean(np.abs(my_x) ** 2, axis=(1, 2))  # FNI
 
-    a_0 = 0.5 * (1.9 * np.abs(np.random.randn(1, n_canals, n_sources))
+    a_0 = 0.5 * (1.9 * np.abs(np.random.randn(n_freq, n_canals, n_sources))
                  + 0.1 * np.ones((n_freq, n_canals, n_sources))) * np.sign(
-        np.random.randn(1, n_canals, n_sources)) + 1j * np.random.randn(1, n_canals, n_sources)
+        np.random.randn(n_freq, n_canals, n_sources)) + 1j * np.random.randn(n_freq, n_canals, n_sources)
 
     w_0 = 0.5 * (np.abs(np.random.randn(n_freq, n_comps)) + 1.0) * my_std.reshape((-1, 1))
     h_0 = 0.5 * (np.abs(np.random.randn(n_comps, n_bins)) + 1.0)
