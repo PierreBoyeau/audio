@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 from nmf_em_naive import NmfEmNaive, init_strategy
 from sources_retriever import to_files, extract_sources_influences
 import numpy as np
+import librosa.core
 import argparse
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_components", type=int, default=12)
-parser.add_argument("--n_sources", type=int, default=3)
+parser.add_argument("--n_components", type=int, default=20)
+parser.add_argument("--n_sources", type=int, default=4)
 parser.add_argument("--filesource")
 parser.add_argument("--mode", default='D')
 parser.add_argument("--directory", default="./results")
@@ -23,7 +24,11 @@ filesource = args.filesource
 direc = args.directory
 mode = args.mode
 
-fs, x_t = read_wav(filename=filesource)
+# fs, x_t = read_wav(filename=filesource)
+
+fs = 16000
+x_t, fs = librosa.core.load(path=filesource, mono=False, sr=fs)
+x_t = x_t.T
 
 print(x_t.shape)
 # x_t = x_t[:40000]
@@ -60,13 +65,22 @@ for iterate in tqdm(range(300)):
         # save_signals(signals_iter, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
         #              filename=direc+'/signals_iter{}'.format(iterate))
         coefs = extract_sources_influences(signals_iter, a_iter)
-        to_files(coefs, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
-                     filename=direc+'/signals_iter{}'.format(iterate))
+        to_files(coefs, nperseg=1024, fs=fs,
+                 filename=direc+'/signals_iter{}'.format(iterate))
 
 
 signals = alg.s
-save_signals(signals, n_freqs=n_freqs, n_bins=n_bins, fs=fs,
-             filename=direc+'/signals_final')
+a = alg.a
+coefs = extract_sources_influences(signals, a)
+to_files(coefs, nperseg=1024, fs=fs,
+         filename=direc+'/signals_final')
+
 
 np.save(direc+'/final_s.npz', alg.s)
 np.save(direc+'/final_a.npz', alg.a)
+
+plt.plot(costs)
+plt.ylabel('Loss')
+plt.xlabel('Iterations')
+plt.title('EM Algorithm Convergence')
+plt.savefig('/home/pierre/MVA/audio/em_convergence_4_males.png')
